@@ -4,20 +4,20 @@ require "redis"
 #ENV['RAILS_RELATIVE_URL_ROOT'] = '/trek'
 
 # Set your full path to application.
-app_path = "/home/admin/webapps/nooLiteCtrl/current"
+app_path = "/home/webapps/nooLiteCtrl"
 
 worker_processes 1
 preload_app true
 timeout 180
-listen "#{app_path}/tmp/sockets/unicorn.trek.sock"
+listen "/tmp/unicorn.noolite.sock"
 
 # User to run unicorm
-user 'admin', 'admin' 
+user 'alexey', 'alexey'
 
 # Fill path to your app
 working_directory app_path
 
-# Should be 'production' by default, otherwise use other env 
+# Should be 'production' by default, otherwise use other env
 # rails_env = ENV['RAILS_ENV'] || 'production'
 
 # Log everything to one file
