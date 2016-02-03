@@ -134,6 +134,8 @@ class NooLite
 
       raise "No device found" if device.nil?
 
+      logger.info "\nExecuting command: #{command.inspect}\n"
+
       device.open_interface(0) do |handle|
         handle.control_transfer(
           :bmRequestType => 0x21,	# LIBUSB_REQUEST_TYPE_CLASS|LIBUSB_RECIPIENT_INTERFACE|LIBUSB_ENDPOINT_OUT
