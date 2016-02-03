@@ -111,7 +111,7 @@ class NooLite
 ###############################################################################
 ###############################################################################
 
-    def execute_command(action, channel, format, data)
+    def execute_command(action, channel, format=0, data=[])
       command = [0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
       command[1] = action if (0..19).include?(action)
