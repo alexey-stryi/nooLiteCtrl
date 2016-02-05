@@ -134,7 +134,7 @@ class NooLite
 
       raise "No device found" if device.nil?
 
-      logger.info "\nExecuting command: #{command.inspect}\n"
+      puts "\nExecuting command: #{command.inspect}\n"
 
       device.open_interface(0) do |handle|
         handle.control_transfer(
