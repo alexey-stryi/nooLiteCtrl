@@ -139,6 +139,8 @@ get '/locations/' do
       end
     }
 
+    data.sort!{|a, b| a[:name] <=> b[:name] }
+
     to_json({:data => data})
   end
 end
