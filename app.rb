@@ -150,7 +150,7 @@ get '/locations/' do
 
     data.sort!{|a, b| a[:name] <=> b[:name] }
 
-    to_json({:data => data})
+    to_json({:success => true, :data => data})
   end
 end
 
@@ -169,7 +169,7 @@ get '/location/:location/bulbs' do
     }
   end
 
-  to_json({:data => data})
+  to_json({:success => true, :data => data})
 end
 
 ###############################################################################
