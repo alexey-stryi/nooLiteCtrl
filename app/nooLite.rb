@@ -79,6 +79,24 @@ class NooLite
 
 ###############################################################################
 
+    def start_smooth_decrease(channel)
+      execute_command(START_SMOOTH_DECREASE, channel)
+    end
+
+###############################################################################
+
+    def start_smooth_increase(channel)
+      execute_command(START_SMOOTH_INCREASE, channel)
+    end
+
+###############################################################################
+
+    def reverse_smooth(channel)
+      execute_command(REVERSE_SMOOTH, channel)
+    end
+
+###############################################################################
+
     def start_smooth_color_roll(channel)
        execute_command(START_SMOOTH, channel, CONTROL)
     end
@@ -124,8 +142,16 @@ class NooLite
           command[5] = data[0]
         when 3 then
           command[5] = data[0]
-          command[6] = data[1]
-          command[7] = data[2]
+          command[6] = data[2]
+          command[7] = data[1]
+  
+          # command[5] = data[2]
+          # command[6] = data[0]
+          # command[7] = data[1]
+
+          # command[5] = data[0]
+          # command[6] = data[1]
+          # command[7] = data[2]
         end
       end
 

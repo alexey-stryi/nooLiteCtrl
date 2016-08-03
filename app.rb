@@ -99,6 +99,15 @@ helpers do
 end
 
 before do
+  # fixing missing POST and PUT params
+  if (request.request_method == "POST" or request.request_method == "PUT") and request.content_type=="application/json"
+    body_parameters = request.body.read
+
+    parsed = body_parameters && body_parameters.length >= 2 ? JSON.parse(body_parameters) : {}
+    params.merge!(parsed)
+  end
+
+  
   if !params['data'].nil?
     begin
       data = JSON.parse(params['data'])
@@ -217,7 +226,8 @@ end
 get '/bulbs/:id' do
   content_type :json
 
-  bulb = JSON.parse(redis.hget(@db_name, params['id']))
+  bulb_data = redis.hget(@db_name, params['id'])
+  bulb = JSON.parse(bulb_data) if bulb_data
 
   if bulb
     {:success => true, :data => [bulb]}.to_json
@@ -324,12 +334,15 @@ put '/bulbs/:id/command/:command' do
       when 'switch_color' then NooLite.switch_color(channel)
       when 'switch_mode'  then NooLite.switch_mode(channel)
       when 'switch_speed' then NooLite.switch_speed(channel)
+      when 'start_smooth_decrease' then NooLite.start_smooth_decrease(channel)
+      when 'start_smooth_increase' then NooLite.start_smooth_increase(channel)
+      when 'reverse_smooth'        then NooLite.reverse_smooth(channel)
     end
   end
 end
 
 ###############################################################################
-
+###    BIND    ###
 link '/bulbs/:id/:channel' do
   content_type :json
 
@@ -344,9 +357,37 @@ link '/bulbs/:id/:channel' do
   end
 end
 
-###############################################################################
+put '/bulbs/:id/bind/:channel' do
+  content_type :json
 
+  with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
+    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
+
+    bulb['binded'] = {} if (bulb['binded'].class != Hash)
+    bulb['binded'][channel] = 1
+
+    NooLite.bind(channel)
+    redis.hset(@db_name, bulb['id'], bulb.to_json)
+  end
+end
+
+###############################################################################
+###    UNBIND    ###
 unlink '/bulbs/:id/:channel' do
+  content_type :json
+
+  with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
+    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
+
+    bulb['binded'] = {} if (bulb['binded'].class != Hash)
+    bulb['binded'][channel] = 0
+
+    NooLite.unbind(channel)
+    redis.hset(@db_name, bulb['id'], bulb.to_json)
+  end
+end
+
+put '/bulbs/:id/unbind/:channel' do
   content_type :json
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
