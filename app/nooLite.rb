@@ -6,22 +6,22 @@ class NooLite
   DEV_PID = 0x05df
 
   # Commands
-  OFF                   = 0
-  START_SMOOTH_DECREASE = 1
-  ON                    = 2
-  START_SMOOTH_INCREASE = 3
-  TOGGLE                = 4
-  REVERSE_SMOOTH        = 5
-  SET                   = 6
-  RUN_SCENARIO          = 7
-  SAVE_SCENARIO         = 8
-  UNBIND                = 9
-  STOP_SMOOTH           = 10
-  BIND                  = 15
-  START_SMOOTH          = 16
-  SWITCH_COLOR          = 17
-  SWITCH_MODE           = 18
-  SWITCH_SPEED          = 19
+  OFF                  = 0
+  SMOOTH_OFF           = 1     # smooth version of the OFF action
+  ON                   = 2
+  SMOOTH_ON            = 3     # smooth version of the ON action
+  TOGGLE               = 4
+  SMOOTH_TOGGLE        = 5     # smooth version of the TOGGLE action
+  SET                  = 6
+  RUN_SCENARIO         = 7
+  SAVE_SCENARIO        = 8
+  UNBIND               = 9
+  STOP_COLOR_PLAY      = 10
+  BIND                 = 15
+  START_COLOR_PLAY     = 16
+  SWITCH_TO_NEXT_COLOR = 17
+  CHANGE_SWITCH_MODE   = 18
+  CHANGE_SWITCH_SPEED  = 19
 
   # Formats
   BRIGHTNESS = 1
@@ -45,20 +45,20 @@ class NooLite
 
 ###############################################################################
 
-    def switch_on(channel)
-      execute_command(ON, channel)
+    def switch_on(channel, smooth = false)
+      execute_command(smooth ? SMOOTH_ON : ON, channel)
     end
 
 ###############################################################################
 
-    def switch_off(channel)
-      execute_command(OFF, channel)
+    def switch_off(channel, smooth = false)
+      execute_command(smooth ? SMOOTH_OFF : OFF, channel)
     end
 
 ###############################################################################
 
-    def toggle(channel)
-      execute_command(TOGGLE, channel)
+    def toggle(channel, smooth = false)
+      execute_command(smooth ? SMOOTH_TOGGLE : TOGGLE, channel)
     end
 
 ###############################################################################
@@ -77,52 +77,35 @@ class NooLite
        execute_command(SET, channel, RGB, colors.map{|c| c.to_i(16)}) if colors.length == 3
     end
 
+
 ###############################################################################
 
-    def start_smooth_decrease(channel)
-      execute_command(START_SMOOTH_DECREASE, channel)
+    def start_color_play(channel)
+       execute_command(START_COLOR_PLAY, channel, CONTROL)
     end
 
 ###############################################################################
 
-    def start_smooth_increase(channel)
-      execute_command(START_SMOOTH_INCREASE, channel)
+    def stop_color_play(channel)
+       execute_command(STOP_COLOR_PLAY, channel)
     end
 
 ###############################################################################
 
-    def reverse_smooth(channel)
-      execute_command(REVERSE_SMOOTH, channel)
+    def switch_to_next_color(channel)
+       execute_command(SWITCH_TO_NEXT_COLOR, channel, CONTROL)
     end
 
 ###############################################################################
 
-    def start_smooth_color_roll(channel)
-       execute_command(START_SMOOTH, channel, CONTROL)
+    def change_switch_mode(channel)
+       execute_command(CHANGE_SWITCH_MODE, channel, CONTROL)
     end
 
 ###############################################################################
 
-    def stop_smooth_roll(channel)
-       execute_command(STOP_SMOOTH, channel)
-    end
-
-###############################################################################
-
-    def switch_color(channel)
-       execute_command(SWITCH_COLOR, channel, CONTROL)
-    end
-
-###############################################################################
-
-    def switch_mode(channel)
-       execute_command(SWITCH_MODE, channel, CONTROL)
-    end
-
-###############################################################################
-
-    def switch_speed(channel)
-       execute_command(SWITCH_SPEED, channel, CONTROL)
+    def change_switch_speed(channel)
+       execute_command(CHANGE_SWITCH_SPEED, channel, CONTROL)
     end
 
 ###############################################################################

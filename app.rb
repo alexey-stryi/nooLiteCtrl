@@ -107,7 +107,7 @@ before do
     params.merge!(parsed)
   end
 
-  
+
   if !params['data'].nil?
     begin
       data = JSON.parse(params['data'])
@@ -128,7 +128,7 @@ end
 
 ###############################################################################
 
-get '/locations/' do
+get '/locations' do
   content_type :json
 
   begin
@@ -259,10 +259,11 @@ put '/bulbs/:id/state/:state' do
     bulb['state'] = params['state'] if ['on', 'off'].include?(params['state'])
 
     channel = get_main_channel(bulb)
+    smooth  = !params['smooth'].nil? && params['smooth'] == 'true'
 
     case bulb['state']
-      when 'on'  then NooLite.switch_on(channel)
-      when 'off' then NooLite.switch_off(channel)
+      when 'on'  then NooLite.switch_on(channel, smooth)
+      when 'off' then NooLite.switch_off(channel, smooth)
     end
 
     redis.hset(@db_name, bulb['id'], bulb.to_json)
@@ -277,7 +278,10 @@ put '/bulbs/:id/toggle' do
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
     bulb['state'] =  bulb['state'] === 'on' ? 'off' : 'on'
 
-    NooLite.toggle(get_main_channel(bulb))
+    channel = get_main_channel(bulb)
+    smooth  = !params['smooth'].nil? && params['smooth'] == 'true'
+
+    NooLite.toggle(channel, smooth)
     redis.hset(@db_name, bulb['id'], bulb.to_json)
   end
 end
@@ -329,34 +333,17 @@ put '/bulbs/:id/command/:command' do
     channel = get_control_channel(bulb)
 
     case params['command']
-      when 'roll'         then NooLite.start_smooth_color_roll(channel)
-      when 'stop'         then NooLite.stop_smooth_roll(channel)
-      when 'switch_color' then NooLite.switch_color(channel)
-      when 'switch_mode'  then NooLite.switch_mode(channel)
-      when 'switch_speed' then NooLite.switch_speed(channel)
-      when 'start_smooth_decrease' then NooLite.start_smooth_decrease(channel)
-      when 'start_smooth_increase' then NooLite.start_smooth_increase(channel)
-      when 'reverse_smooth'        then NooLite.reverse_smooth(channel)
+      when 'start_color_play'     then NooLite.start_color_play(channel)
+      when 'stop_color_play'      then NooLite.stop_color_play(channel)
+      when 'switch_to_next_color' then NooLite.switch_to_next_color(channel)
+      when 'change_switch_mode'   then NooLite.change_switch_mode(channel)
+      when 'change_switch_speed'  then NooLite.change_switch_speed(channel)
     end
   end
 end
 
 ###############################################################################
 ###    BIND    ###
-link '/bulbs/:id/:channel' do
-  content_type :json
-
-  with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
-    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
-
-    bulb['binded'] = {} if (bulb['binded'].class != Hash)
-    bulb['binded'][channel] = 1
-
-    NooLite.bind(channel)
-    redis.hset(@db_name, bulb['id'], bulb.to_json)
-  end
-end
-
 put '/bulbs/:id/bind/:channel' do
   content_type :json
 
@@ -373,20 +360,6 @@ end
 
 ###############################################################################
 ###    UNBIND    ###
-unlink '/bulbs/:id/:channel' do
-  content_type :json
-
-  with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
-    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
-
-    bulb['binded'] = {} if (bulb['binded'].class != Hash)
-    bulb['binded'][channel] = 0
-
-    NooLite.unbind(channel)
-    redis.hset(@db_name, bulb['id'], bulb.to_json)
-  end
-end
-
 put '/bulbs/:id/unbind/:channel' do
   content_type :json
 
