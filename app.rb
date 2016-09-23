@@ -65,27 +65,6 @@ helpers do
 
 ###############################################################################
 
-  def get_main_channel(bulb)
-    if !bulb['channel'].nil?
-      bulb['channels'] = []
-      bulb['channels'] << bulb['channel']
-      bulb.delete('channel')
-    end
-
-    return bulb['channels'][0]
-  end
-
-###############################################################################
-
-  def get_control_channel(bulb)
-    return get_main_channel(bulb) unless bulb['channel'].nil?
-    return get_main_channel(bulb) if bulb['channels'].length == 1
-
-    return bulb['channels'][1]
-  end
-
-###############################################################################
-
   def h(text)
     Rack::Utils.escape_html(text)
   end
@@ -191,22 +170,18 @@ end
 post '/bulbs' do
   content_type :json
 
-  bulb_id  = get_id(redis)
-  channels = [ get_available_channel(redis) ]
+  bulb_id = get_id(redis)
+  channel = get_available_channel(redis)
 
-  return  {:success => false, :reason => :no_channel_available}.to_json if channels[0].nil?
-
-  if params['type'] == 'led'
-    channels << get_available_channel(redis, channels[0])
-  end
+  return  {:success => false, :reason => :no_channel_available}.to_json if channel.nil?
 
   bulb = {
     :id         => bulb_id,
-    :channels   => channels,
+    :channel    => channel,
     :name       => params['name'],
     :location   => params['location'],
     :type       => params['type'],
-    :binded     => channels.map{|ch| [ch, 0]}.to_h,
+    :binded     => 0,
     :state      => 'off',
     :color      => 'FFFFFF',
     :brightness => 100
@@ -258,7 +233,7 @@ put '/bulbs/:id/state/:state' do
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
     bulb['state'] = params['state'] if ['on', 'off'].include?(params['state'])
 
-    channel = get_main_channel(bulb)
+    channel = bulb['channel']
     smooth  = !params['smooth'].nil? && params['smooth'] == 'true'
 
     case bulb['state']
@@ -278,7 +253,7 @@ put '/bulbs/:id/toggle' do
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
     bulb['state'] =  bulb['state'] === 'on' ? 'off' : 'on'
 
-    channel = get_main_channel(bulb)
+    channel = bulb['channel']
     smooth  = !params['smooth'].nil? && params['smooth'] == 'true'
 
     NooLite.toggle(channel, smooth)
@@ -293,14 +268,13 @@ put '/bulbs/:id/brightness/:brightness' do
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
     brightness = params['brightness'].to_i
-    channel    = get_control_channel(bulb)
 
     if (0..100).include?(brightness)
       bulb['brightness'] = brightness
 
       redis.hset(@db_name, bulb['id'], bulb.to_json)
 
-      NooLite.set_brightness(channel, brightness)
+      NooLite.set_brightness(bulb['channel'], brightness)
     end
   end
 end
@@ -312,14 +286,13 @@ put '/bulbs/:id/color/:color' do
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
     color   = params['color']
-    channel = get_control_channel(bulb)
 
     if color =~ /\h{6}/   # a valid HEX color value
       bulb['color'] = color
 
       redis.hset(@db_name, bulb['id'], bulb.to_json)
 
-      NooLite.set_color(channel, color)
+      NooLite.set_color(bulb['channel'], color)
     end
   end
 end
@@ -330,7 +303,7 @@ put '/bulbs/:id/command/:command' do
   content_type :json
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
-    channel = get_control_channel(bulb)
+    channel = bulb['channel']
 
     case params['command']
       when 'start_color_play'     then NooLite.start_color_play(channel)
@@ -348,12 +321,9 @@ put '/bulbs/:id/bind/:channel' do
   content_type :json
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
-    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
+    bulb['binded'] = 1
+    NooLite.bind(bulb['channel'])
 
-    bulb['binded'] = {} if (bulb['binded'].class != Hash)
-    bulb['binded'][channel] = 1
-
-    NooLite.bind(channel)
     redis.hset(@db_name, bulb['id'], bulb.to_json)
   end
 end
@@ -364,12 +334,9 @@ put '/bulbs/:id/unbind/:channel' do
   content_type :json
 
   with_bulb(redis.hget(@db_name, params['id'])) do |bulb|
-    channel = params['channel'].to_i if bulb['channels'].include?(params['channel'].to_i)
+    bulb['binded'] = 0
+    NooLite.unbind(bulb['channel'])
 
-    bulb['binded'] = {} if (bulb['binded'].class != Hash)
-    bulb['binded'][channel] = 0
-
-    NooLite.unbind(channel)
     redis.hset(@db_name, bulb['id'], bulb.to_json)
   end
 end
@@ -398,3 +365,4 @@ delete '/bulbs/:id' do
     {:success => false, :reason => :not_found}.to_json
   end
 end
+
