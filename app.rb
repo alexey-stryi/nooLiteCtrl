@@ -65,6 +65,28 @@ helpers do
 
 ###############################################################################
 
+  def with_bulbs(data, &block)
+    return {:success => false, :reason => :not_found}.to_json if data.nil?
+
+    begin
+      result = []
+
+      data.each{|d|
+        bulb = JSON.parse(d)
+
+        block.call(bulb)
+
+        result << bulb
+      }
+
+      return {:success => true, :data => result}.to_json
+    rescue => e
+      return [422, {:success => false, :reason => :error, :message => e.message}.to_json]
+    end
+  end
+
+###############################################################################
+
   def h(text)
     Rack::Utils.escape_html(text)
   end
@@ -149,6 +171,26 @@ get '/location/:location/bulbs' do
   end
 
   to_json({:success => true, :data => data})
+end
+
+###############################################################################
+
+put '/location/:location/state/off' do
+  content_type :json
+
+  data = []
+  begin
+    redis.hvals(@db_name).each{|value|
+      bulb = JSON.parse(value)
+      data << value if bulb['location'] == params['location']
+    }
+  end
+
+  with_bulbs(data) do |bulb|
+    bulb['state'] = 'off'
+    NooLite.switch_off(bulb['channel'], false)
+    redis.hset(@db_name, bulb['id'], bulb.to_json)
+  end
 end
 
 ###############################################################################

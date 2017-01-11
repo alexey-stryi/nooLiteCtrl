@@ -124,17 +124,17 @@ class NooLite
         when 1 then
           command[5] = data[0]
         when 3 then
-          command[5] = data[0]
-          command[6] = data[2]
-          command[7] = data[1]
+          # command[5] = data[0]
+          # command[6] = data[2]
+          # command[7] = data[1]
   
           # command[5] = data[2]
           # command[6] = data[0]
           # command[7] = data[1]
 
-          # command[5] = data[0]
-          # command[6] = data[1]
-          # command[7] = data[2]
+          command[5] = data[0]
+          command[6] = data[1]
+          command[7] = data[2]
         end
       end
 
